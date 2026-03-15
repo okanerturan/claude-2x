@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Double Rates — Claude 2× Usage Clock</title>
+    <meta name="description" content="See when your Claude usage doubles during off-peak hours. Live clock with timezone support for Anthropic's March 2026 promotion." />
+    <link rel="canonical" href="https://double-rates.pages.dev" />
+    <meta name="theme-color" content="#D97757" />
+    <meta property="og:title" content="Double Rates — Claude 2× Usage Clock" />
+    <meta property="og:description" content="See when your Claude usage doubles during off-peak hours. Live clock with timezone support for Anthropic's March 2026 promotion." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://double-rates.pages.dev" />
+    <meta property="og:image" content="https://double-rates.pages.dev/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:site_name" content="Double Rates" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Double Rates — Claude 2× Usage Clock" />
+    <meta name="twitter:description" content="See when your Claude usage doubles during off-peak hours. Live clock with timezone support." />
+    <meta name="twitter:image" content="https://double-rates.pages.dev/og-image.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="grain"></div>
+    <div class="app">
+      <header>
+        <h1><span class="logo-accent">Double</span> Rates</h1>
+        <p id="promo-banner" class="date-range"></p>
+      </header>
+
+      <div class="main-grid">
+        <div class="clock-col">
+          <div id="clock-container" class="clock-container"></div>
+        </div>
+
+        <div class="info-col">
+          <div class="time-block">
+            <div class="current-time-row">
+              <span id="current-time" class="current-time"></span>
+            </div>
+          </div>
+
+          <div class="status-panel">
+            <div id="status-badge" class="status-badge">—</div>
+            <p id="status-desc" class="status-desc"></p>
+            <p id="countdown" class="countdown"></p>
+            <div class="progress-wrap">
+              <div class="progress-bar">
+                <div id="progress-fill" class="progress-fill"></div>
+                <div id="progress-markers" class="progress-markers"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tz-selector">
+            <div class="select-wrapper">
+              <select id="tz-select" aria-label="Timezone"></select>
+              <svg class="select-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="source-link">
+            <a href="https://support.claude.com/en/articles/14063676-claude-march-2026-usage-promotion" target="_blank" rel="noopener">Promotion details &rarr;</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="campaign-timeline" id="campaign-timeline">
+        <div class="campaign-track" id="campaign-track"></div>
+        <div class="campaign-now" id="campaign-now"></div>
+        <div class="campaign-markers" id="campaign-markers"></div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
