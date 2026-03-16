@@ -58,6 +58,12 @@ const DEV_HOURS = 30 * 24; // March 1–30
 
 const devBar = document.createElement('div');
 devBar.className = 'dev-bar';
+// Promo boundaries as hour offsets from DEV_START
+const PROMO_START_HOUR = Math.round((new Date('2026-03-13T00:00:00-04:00').getTime() - DEV_START.getTime()) / 3600000);
+const PROMO_END_HOUR = Math.round((new Date('2026-03-27T23:59:00-07:00').getTime() - DEV_START.getTime()) / 3600000);
+const promoStartPct = (PROMO_START_HOUR / DEV_HOURS) * 100;
+const promoEndPct = (PROMO_END_HOUR / DEV_HOURS) * 100;
+
 devBar.innerHTML = `
   <div class="dev-bar-inner">
     <label class="dev-toggle">
@@ -65,7 +71,12 @@ devBar.innerHTML = `
       <span>Dev mode</span>
     </label>
     <div class="dev-slider-wrap" id="dev-slider-wrap" style="display:none">
-      <input type="range" id="dev-slider" min="0" max="${DEV_HOURS}" value="0" step="1" />
+      <div class="dev-slider-track">
+        <div class="dev-promo-region" style="left:${promoStartPct}%;width:${promoEndPct - promoStartPct}%"></div>
+        <div class="dev-promo-cutoff dev-promo-start" style="left:${promoStartPct}%"><span>Start</span></div>
+        <div class="dev-promo-cutoff dev-promo-end" style="left:${promoEndPct}%"><span>End</span></div>
+        <input type="range" id="dev-slider" min="0" max="${DEV_HOURS}" value="0" step="1" />
+      </div>
       <div class="dev-slider-labels">
         <span>Mar 1</span><span>Mar 8</span><span>Mar 13</span><span>Mar 20</span><span>Mar 27</span><span>Mar 30</span>
       </div>
@@ -93,26 +104,40 @@ devToggle.addEventListener('change', () => {
   }
 });
 
+// Pre-create ET formatter (stable), local formatter recreated on tz change
+const devEtFmt = new Intl.DateTimeFormat('en-US', {
+  weekday: 'short', month: 'short', day: 'numeric',
+  hour: 'numeric', minute: '2-digit',
+  timeZone: 'America/New_York',
+});
+
 function applyDevTime() {
   const hours = parseInt(devSlider.value, 10);
   const simDate = new Date(DEV_START.getTime() + hours * 3600000);
   setTimeOverride(simDate);
 
-  const etStr = simDate.toLocaleString('en-US', {
-    weekday: 'short', month: 'short', day: 'numeric',
-    hour: 'numeric', minute: '2-digit',
-    timeZone: 'America/New_York',
-  });
-  const localStr = simDate.toLocaleString('en-US', {
+  // Fix #3: Always format with current timezone
+  const localFmt = new Intl.DateTimeFormat('en-US', {
     weekday: 'short', month: 'short', day: 'numeric',
     hour: 'numeric', minute: '2-digit',
     timeZone: state.timezone,
   });
-  devLabel.textContent = `ET: ${etStr}  ·  Local: ${localStr}`;
+  devLabel.textContent = `ET: ${devEtFmt.format(simDate)}  ·  Local: ${localFmt.format(simDate)}`;
 
-  lastPeakState = isCurrentlyPeak();
-  lastShowPeak = isPeakVisibleOnClock(state.timezone);
-  fullUpdate();
+  const nowPeak = isCurrentlyPeak();
+  const nowShowPeak = isPeakVisibleOnClock(state.timezone);
+
+  // Fix #1: Always rebuild clock in dev mode — arc positions change across DST boundaries
+  if (nowPeak !== lastPeakState || nowShowPeak !== lastShowPeak) {
+    lastPeakState = nowPeak;
+    lastShowPeak = nowShowPeak;
+  }
+  rebuildClock();
+
+  // Cheap updates every tick
+  updateClock(state.timezone);
+  updateUI(state.timezone);
+  updateStatusPanelClass();
 }
 
 devSlider.addEventListener('input', applyDevTime);

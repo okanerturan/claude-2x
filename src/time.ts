@@ -247,6 +247,19 @@ export function getPeriodProgress(): number {
 }
 
 /** Get midnight boundaries within the current period, as fractional positions (0-1) with day labels */
+const _markerFmtCache = new Map<string, { time: Intl.DateTimeFormat; day: Intl.DateTimeFormat }>();
+function getMarkerFmts(tz: string) {
+  let fmts = _markerFmtCache.get(tz);
+  if (!fmts) {
+    fmts = {
+      time: new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: false, timeZone: tz }),
+      day: new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: tz }),
+    };
+    _markerFmtCache.set(tz, fmts);
+  }
+  return fmts;
+}
+
 export function getPeriodDayMarkers(tz: string): { position: number; label: string }[] {
   const now = getNowMs();
   let periodStartMs: number;
@@ -269,12 +282,9 @@ export function getPeriodDayMarkers(tz: string): { position: number; label: stri
   const totalMs = periodEndMs - periodStartMs;
   if (totalMs <= 0) return [];
 
-  // Find time-of-day at period start in user's tz
-  const startParts = new Intl.DateTimeFormat('en-US', {
-    hour: 'numeric', minute: 'numeric', second: 'numeric',
-    hour12: false, timeZone: tz,
-  }).formatToParts(new Date(periodStartMs));
+  const fmts = getMarkerFmts(tz);
 
+  const startParts = fmts.time.formatToParts(new Date(periodStartMs));
   let startH = 0, startM = 0, startS = 0;
   for (const p of startParts) {
     if (p.type === 'hour') startH = parseInt(p.value, 10);
@@ -283,7 +293,6 @@ export function getPeriodDayMarkers(tz: string): { position: number; label: stri
   }
   if (startH === 24) startH = 0;
 
-  // Seconds from period start to first midnight in user's tz
   const secsToFirstMidnight = (24 - startH) * 3600 - startM * 60 - startS;
 
   const markers: { position: number; label: string }[] = [];
@@ -293,8 +302,7 @@ export function getPeriodDayMarkers(tz: string): { position: number; label: stri
     const pos = offsetMs / totalMs;
     if (pos > 0.03 && pos < 0.97) {
       const midnightDate = new Date(periodStartMs + offsetMs);
-      const dayLabel = new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: tz }).format(midnightDate);
-      markers.push({ position: pos, label: dayLabel });
+      markers.push({ position: pos, label: fmts.day.format(midnightDate) });
     }
     offsetMs += 86400 * 1000;
   }

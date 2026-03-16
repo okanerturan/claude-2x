@@ -6,10 +6,55 @@ import {
   getCurrentTimeInTz,
   getNowMs,
   getTimezoneList,
-  detectTimezone,
   getPeriodProgress,
   getPeriodDayMarkers,
 } from './time';
+
+const offpeakLines = [
+  'This site was shipped in off-peak hours',
+  'This line was also written by Claude',
+  'You\'re reading AI-generated motivational copy',
+  'Even this status text cost 2× tokens',
+  'Claude built this page to tell you to use more Claude',
+  'That SaaS stands no chance',
+  'Accept all, read nothing',
+  'Slop at scale, ship at speed',
+  'The AI wrote this line too. And the next one.',
+  'Who needs tests when you have vibes',
+  'git push --force and pray',
+  'The AI is mass-producing its own propaganda right now',
+  'You are the PM now',
+  'This clock was vibe-coded at 2AM during 2× hours',
+  'The backlog can wait, the vibes cannot',
+  'Your rate limit fears you right now',
+  'None of the humans involved read the code',
+  'This entire site is one long prompt away from breaking',
+  'Production is just staging with users',
+  'Anthropic is literally paying you to use this harder',
+];
+
+const peakLines = [
+  'Peak hours. The AI is resting too (it isn\'t)',
+  'Normal rate. Maybe write code yourself? (don\'t)',
+  'Save the big prompts for later',
+  'Good time to touch grass',
+  'This status text is judging your patience',
+  'Refill the coffee, peak is temporary',
+  'The 2× window will return. So will your mass prompting.',
+  'Write your own code for once (this is a threat)',
+  'Time to pretend you understand the codebase',
+  'Read a book. Just kidding, scroll Twitter.',
+  'Peak hours: when devs remember they have legs',
+];
+
+// Pick a random line — new one each page load, stable during session
+let _pickSeed = Math.random();
+function pickRandom(lines: string[]): string {
+  const idx = Math.floor(_pickSeed * lines.length) % lines.length;
+  return lines[idx]!;
+}
+// Reshuffle every 30 seconds
+setInterval(() => { _pickSeed = Math.random(); }, 30000);
 
 export function initUI(timezone: string, onTimezoneChange: (tz: string) => void): void {
   initTimezoneSelector(timezone, onTimezoneChange);
@@ -29,51 +74,92 @@ function getGmtOffset(tz: string): string {
 }
 
 function initTimezoneSelector(currentTz: string, onChange: (tz: string) => void): void {
-  const select = document.getElementById('tz-select') as HTMLSelectElement;
-  if (!select) return;
+  const btn = document.getElementById('tz-picker-btn');
+  const dropdown = document.getElementById('tz-dropdown');
+  const search = document.getElementById('tz-search') as HTMLInputElement | null;
+  const list = document.getElementById('tz-list');
+  const label = document.getElementById('tz-picker-label');
+  if (!btn || !dropdown || !search || !list || !label) return;
 
-  const allZones = getTimezoneList();
-  const detected = detectTimezone();
-
-  const groups = new Map<string, string[]>();
-  for (const tz of allZones) {
-    const slash = tz.indexOf('/');
-    const region = slash > -1 ? tz.substring(0, slash) : 'Other';
-    if (!groups.has(region)) groups.set(region, []);
-    groups.get(region)!.push(tz);
+  let allZones = getTimezoneList().filter(tz => !tz.startsWith('Etc/'));
+  // Ensure detected timezone is always in the list (fallback browsers)
+  if (!allZones.includes(currentTz)) {
+    allZones = [currentTz, ...allZones];
   }
 
-  if (detected) {
-    const opt = document.createElement('option');
-    opt.value = detected;
-    const gmt = getGmtOffset(detected);
-    opt.textContent = `${detected.replace(/_/g, ' ')} (${gmt})`;
-    select.appendChild(opt);
+  // Build items once
+  const items: { tz: string; display: string; searchText: string }[] = allZones.map(tz => {
+    const city = tz.split('/').pop()!.replace(/_/g, ' ');
+    const gmt = getGmtOffset(tz);
+    return {
+      tz,
+      display: `${city} (${gmt})`,
+      searchText: `${tz} ${city} ${gmt}`.toLowerCase(),
+    };
+  });
+
+  function setLabel(tz: string) {
+    const gmt = getGmtOffset(tz);
+    label!.textContent = `${tz.replace(/_/g, ' ')} (${gmt})`;
   }
 
-  const separator = document.createElement('option');
-  separator.disabled = true;
-  separator.textContent = '──────────────';
-  select.appendChild(separator);
+  setLabel(currentTz);
 
-  for (const [region, zones] of groups) {
-    if (region === 'Etc') continue;
-    const optgroup = document.createElement('optgroup');
-    optgroup.label = region;
-    for (const tz of zones) {
-      const opt = document.createElement('option');
-      opt.value = tz;
-      const city = tz.split('/').pop()!.replace(/_/g, ' ');
-      const gmt = getGmtOffset(tz);
-      opt.textContent = `${city} (${gmt})`;
-      if (tz === currentTz && tz !== detected) opt.selected = true;
-      optgroup.appendChild(opt);
+  function renderList(filter: string) {
+    list!.innerHTML = '';
+    const q = filter.toLowerCase();
+    const matches = q ? items.filter(i => i.searchText.includes(q)) : items;
+
+    for (const item of matches.slice(0, 50)) {
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'tz-item' + (item.tz === currentTz ? ' active' : '');
+      el.textContent = item.display;
+      el.addEventListener('click', () => {
+        currentTz = item.tz;
+        setLabel(item.tz);
+        close();
+        onChange(item.tz);
+      });
+      list!.appendChild(el);
     }
-    select.appendChild(optgroup);
+
+    if (matches.length > 50) {
+      const more = document.createElement('div');
+      more.className = 'tz-more';
+      more.textContent = `${matches.length - 50} more, keep typing to filter`;
+      list!.appendChild(more);
+    }
   }
 
-  select.value = currentTz;
-  select.addEventListener('change', () => onChange(select.value));
+  function open() {
+    dropdown!.style.display = '';
+    search!.value = '';
+    renderList('');
+    search!.focus();
+  }
+
+  function close() {
+    dropdown!.style.display = 'none';
+  }
+
+  btn.addEventListener('click', () => {
+    if (dropdown.style.display === 'none') open();
+    else close();
+  });
+
+  search.addEventListener('input', () => renderList(search.value));
+
+  // Close on outside click
+  document.addEventListener('click', (e) => {
+    const picker = document.getElementById('tz-picker');
+    if (picker && !picker.contains(e.target as Node)) close();
+  });
+
+  // Close on escape
+  search.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') close();
+  });
 }
 
 
@@ -96,7 +182,7 @@ export function updateUI(timezone: string): void {
     }
   }
 
-  // Status description
+  // Status description — rotating fun copy
   const desc = document.getElementById('status-desc');
   if (desc) {
     if (promoStatus === 'upcoming') {
@@ -104,9 +190,9 @@ export function updateUI(timezone: string): void {
     } else if (promoStatus === 'ended') {
       desc.textContent = 'Promotion ended March 27, 2026';
     } else if (peak) {
-      desc.textContent = 'Peak hours, normal rate applies.';
+      desc.textContent = pickRandom(peakLines);
     } else {
-      desc.textContent = 'Off-peak hours, double usage rate';
+      desc.textContent = pickRandom(offpeakLines);
     }
   }
 

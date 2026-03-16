@@ -3,11 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Double Rates — Claude 2× Usage Clock</title>
+    <title>Double Rates — Claude Usage Clock</title>
     <meta name="description" content="See when your Claude usage doubles during off-peak hours. Live clock with timezone support for Anthropic's March 2026 promotion." />
     <link rel="canonical" href="https://double-rates.pages.dev" />
     <meta name="theme-color" content="#D97757" />
-    <meta property="og:title" content="Double Rates — Claude 2× Usage Clock" />
+    <meta property="og:title" content="Double Rates — Claude Usage Clock" />
     <meta property="og:description" content="See when your Claude usage doubles during off-peak hours. Live clock with timezone support for Anthropic's March 2026 promotion." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://double-rates.pages.dev" />
@@ -17,7 +17,7 @@
     <meta property="og:locale" content="en_US" />
     <meta property="og:site_name" content="Double Rates" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Double Rates — Claude 2× Usage Clock" />
+    <meta name="twitter:title" content="Double Rates — Claude Usage Clock" />
     <meta name="twitter:description" content="See when your Claude usage doubles during off-peak hours. Live clock with timezone support." />
     <meta name="twitter:image" content="https://double-rates.pages.dev/og-image.png" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -59,12 +59,18 @@
             </div>
           </div>
 
-          <div class="tz-selector">
-            <div class="select-wrapper">
-              <select id="tz-select" aria-label="Timezone"></select>
-              <svg class="select-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
+          <div class="tz-selector" id="tz-selector">
+            <div class="tz-picker" id="tz-picker">
+              <button type="button" class="tz-picker-btn" id="tz-picker-btn" aria-label="Timezone">
+                <span id="tz-picker-label"></span>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <div class="tz-dropdown" id="tz-dropdown" style="display:none">
+                <input type="text" class="tz-search" id="tz-search" placeholder="Search timezone..." autocomplete="off" />
+                <div class="tz-list" id="tz-list"></div>
+              </div>
             </div>
           </div>
 
