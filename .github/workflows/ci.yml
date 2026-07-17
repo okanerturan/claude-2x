@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-smoke:
+    name: Build and smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production site
+        run: npm run build
+
+      - name: Verify production artifact and CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -s dist/index.html
+
+          for script in cli.sh public/cli.sh; do
+            bash -n "$script"
+          done
+
+          cmp -s cli.sh public/cli.sh
+          cmp -s cli.sh dist/cli.sh
+
+          output="$(bash ./cli.sh)"
+          test -n "$output"
+          grep -Fq 'support.claude.com/en/articles/14063676' <<<"$output"
