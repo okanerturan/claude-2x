@@ -1,6 +1,6 @@
 # Double Rates
 
-[![CI](https://github.com/okturan/claude-2x/actions/workflows/ci.yml/badge.svg)](https://github.com/okturan/claude-2x/actions/workflows/ci.yml)
+[![CI](https://github.com/okanerturan/claude-2x/actions/workflows/ci.yml/badge.svg)](https://github.com/okanerturan/claude-2x/actions/workflows/ci.yml)
 
 > Historical project: this clock was built for Claude's March 13–27, 2026 usage promotion. That campaign has ended. The browser UI now reports the promotion as inactive; this repository is useful as an implementation sample, not as a current entitlement checker.
 
